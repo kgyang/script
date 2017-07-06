@@ -1,0 +1,68 @@
+#!/bin/ksh
+
+#KSH only
+#The symbol |& causes asynchronous execution of the preceding pipeline 
+#with a two-way pipe established to the parent shell; the standard input 
+#and output of the spawned  pipeline  can  be written to and read from by 
+#the parent shell by applying the redirection operators <& and >& with 
+#arg p to commands and by using -p option of the built-in commands read 
+#and print  described  later.
+
+fail()
+{
+	echo "$*" >&2
+	exit 1
+}
+
+wait_ne_response()
+{
+	# wait 10 seconds for response
+	timeout=10
+	while read -t $timeout -p res <&p
+	do
+		echo $res
+		echo $res | grep -q "$1" && return 0
+	done
+	fail "timeout to wait for NE response"
+}
+
+send_to_ne()
+{
+	print -p "$1\n" >&p
+}
+
+read_ne_response()
+{
+	while read -p res <&p
+	do
+		echo $res
+	done
+}
+
+[ $# -eq 1 ] || fail "$0 <NE>"
+
+[[ -n "$NE_PASSWORD" ]] || fail 'please export NE_PASSWORD'
+
+NE=$1
+
+telnet $NE -l "root" |&
+
+#login
+wait_ne_response "Connected"
+sleep 1
+send_to_ne $NE_PASSWORD
+wait_ne_response "Last login:"
+sleep 1
+
+#group commands to be sent
+cmds='{
+ls /
+exit
+}
+'
+send_to_ne "$cmds"
+
+read_ne_response
+
+wait
+

@@ -1,0 +1,55 @@
+#!/bin/ksh
+
+usage()
+{
+	echo "Usage: $(basename $0) [-b BRANCH] add|del 'CODE' FILE" >&2
+	echo "Find who added/deleted CODE in FILE in BRANCH (main branch by default)" >&2
+	echo "Only SINGLE code line allowed" >&2
+	echo "Example: $(basename $0) add 'debuglevel_ = DEBUG_LEVEL_ERR' EcOduDXCPathMgr.cc" >&2
+	exit 1
+}
+
+branch=main
+while getopts :b: opt; do
+	case $opt in
+	b) branch=$OPTARG;;
+	?) usage;;
+	esac
+done
+shift $(($OPTIND - 1))
+
+action=$1
+text="$2"
+file=$3
+[ "$action" = "add" -o "$action" = "del" ] || usage
+[ -n "$file" -a -n "$text" ] || usage
+[ -f "$file" ] || { echo "file $1 not exist" >&2; exit 1; }
+[ $(wc -l <<< $text) -eq 1 ] || { echo "only support single line code" >&2; exit 1; }
+
+historyvers=$(cleartool lshistory -branch $branch -short $file) || exit 1
+#-> ct lshistory -branch main -short xxx.cc
+#PortVtsVlanRecord.cc@@/main/main/CHECKEDOUT
+#PortVtsVlanRecord.cc@@/main/main/1
+#PortVtsVlanRecord.cc@@/main/main/0
+#PortVtsVlanRecord.cc@@/main/main
+
+for ver in $historyvers; do
+	vernum=${ver##*/}
+	[ "$vernum" -gt 0 ] || continue
+	[ -f "$ver" ] || { echo $ver not file; continue; }
+	if [ "$action" = 'add' ]; then
+		fgrep -q -e "$text" $ver || break
+	else
+		fgrep -q -e "$text" $ver && break
+	fi
+	found=$ver
+done
+
+if [ -n "$found" ]; then
+	cleartool desc $found >&2
+	echo $found
+else
+	echo "not found" >&2
+	exit 1
+fi
+

@@ -1,0 +1,6 @@
+#!/bin/ksh
+
+[[ $# -eq 1 ]] || { echo "$(basename ${0}) command"; exit 1; }
+
+man -t $1 | ps2pdf - > ${1}.pdf
+

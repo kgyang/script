@@ -1,0 +1,43 @@
+#!/bin/ksh
+
+usage()
+{
+	echo "Usage: $(basename $0) [-b <branch>] <filename> <code>" >&2
+	echo "Search the file version in which code was checked in(in main branch by default)" >&2
+	echo " - <text> should be quoted by '', only SINGLE code line allowed" >&2
+	echo "Example: $(basename $0) EcOduDXCPathMgr.cc 'debuglevel_ = DEBUG_LEVEL_ERR'" >&2
+	exit 1
+}
+
+branch=main
+while getopts :b:?h opt; do
+	case $opt in
+	h) usage;;
+	\?) usage;;
+	b) branch=$OPTARG;;
+	esac
+done
+shift $(($OPTIND - 1))
+
+file=$1
+text="$2"
+[ -n "$file" -a -n "$text" ] || usage
+[ -f "$file" ] || { echo "file not exist" >&2; exit 1; }
+[ $(wc -l <<< $text) -eq 1 ] || { echo "text should not contain newline" >&2; exit 1; }
+
+historyvers=$(cleartool lshistory -branch $branch -short $file) || exit 1
+
+for ver in $historyvers; do
+	[ -f $ver ] || continue # skip @@branch
+	fgrep -q -e "$text" $ver || break
+	found=$ver
+done
+
+if [ -n "$found" ]; then
+	cleartool desc $found >&2
+	echo $found
+else
+	echo "not found" >&2
+	exit 1
+fi
+

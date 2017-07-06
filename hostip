@@ -1,0 +1,6 @@
+#!/bin/ksh
+
+#/sbin/ip -f inet addr | sed -rn 's/.*inet ([^ ]+).*(eth[[:digit:]]*(:[[:digit:]]+)?)/\2 \1/p' | column -t
+#/sbin/ip -f inet addr | sed -rn 's/.*inet ([^ ]*)\/[[:digit:]]* .*eth.*/\1/p' | column -t
+dev=$(ip -f inet route show | grep 'default' | awk '{print $NF}')
+ip -f inet addr show $dev | sed -rn 's/.*inet ([^ ]*)\/[[:digit:]]* .*eth.*/\1/p'

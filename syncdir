@@ -1,0 +1,96 @@
+#!/bin/ksh
+
+CREATED_LIST=""
+UPDATED_LIST=""
+
+add_to_create_list()
+{
+	CREATED_LIST="$CREATED_LIST $1"
+}
+
+add_to_update_list()
+{
+	UPDATED_LIST="$UPDATED_LIST $1"
+}
+
+print_create_list()
+{
+	if [ -n "$CREATED_LIST" ]
+	then
+		echo "---- list of files created ----"
+		for f in $CREATED_LIST
+		do
+			echo "$f"
+		done
+	fi
+}
+
+print_update_list()
+{
+	if [ -n "$UPDATED_LIST" ]
+	then
+		echo "---- list of files updated ----"
+		for f in $UPDATED_LIST
+		do
+			echo "$f"
+		done
+	fi
+}
+
+checkout_file()
+{
+	if [ -n "$MR" ]
+	then
+		cleartool co -nc $1
+	else
+		muckup $1
+	fi
+}
+
+compare_file()
+{
+	srcf=$1
+	dstf=$2
+	# file is always checked out(not muckuped) with latest version
+	[ -n "$MR" -a ! -w $dstf ] && dstf=$(cleartool lshistory -branch main -short -last 1 $dstf) 
+	cmp -s $srcf $dstf
+}
+
+sync_file()
+{
+	if [ -f $2 ]
+	then
+		compare_file $1 $2 || {
+			[ -w $2 ] || checkout_file $2
+			cp $1 $2
+			add_to_update_list $2
+		}
+	else
+		cp $1 $2
+		add_to_create_list $2
+	fi
+}
+
+sync_dir()
+{
+	[ -d $2 ] || { mkdir -p $2; add_to_create_list $2; }
+	for f in $1/*
+	do
+		if [ -f $f ]; then
+			sync_file $f $2/$(basename $f)
+		elif [ -d $f ]; then
+			sync_dir $f $2/$(basename $f)
+		fi
+	done
+}
+
+[[ $# -eq 2 ]] || { echo "$0 <srcdir> <dstdir>" >&2; exit 1; }
+
+set -e
+
+sync_dir $1 $2
+
+print_create_list
+
+print_update_list
+
