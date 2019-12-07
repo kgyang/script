@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# scan auth and secure log to find out attacking IPs (failure times >= 10) then block them using iptables.
-
 BLOCKIP_CHAIN=blockip
+IP_DENY_FILE=$HOME/script/ips_deny.txt
 
-dump_log()
+bad_ip_in_log()
 {
+    {
     for f in /var/log/auth.log /var/log/secure
     do
         [[ -f $f ]] && cat $f
@@ -15,16 +15,25 @@ dump_log()
     do
         [[ -f $f ]] && zcat $f
     done
+    } |
+    sed -n 's/.*Failed password for .* from \(.*\) port.*/\1/p' |
+    awk '{num[$1]++;}END{for (ip in num) if (num[ip] >= 10) print(ip)}'
+}
+
+bad_ip_in_file()
+{
+    [[ -f $IP_DENY_FILE ]] && grep -v '#' $IP_DENY_FILE
+}
+
+bad_ip()
+{
+    { bad_ip_in_log; bad_ip_in_file; } | sort | uniq
 }
 
 start()
 {
-    ips=$(dump_log | sed -n 's/.*Failed password for .* from \(.*\) port.*/\1/p' |
-          awk '{num[$1]++;}END{for (ip in num) if (num[ip] >= 10) print(ip)}')
-    [[ -n "$ips" ]] || {
-        echo "no suspicious ip"
-        return
-    }
+    ips=$(bad_ip)
+    [[ -n "$ips" ]] || return
 
     stop
 
