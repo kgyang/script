@@ -1,0 +1,22 @@
+#!/bin/bash
+
+usage()
+{
+    echo "list all changed/new files in a commit" >&2
+    echo "Usage: $0 [commit]" >&2
+    exit 1
+}
+
+[[ "$1" == "-h" ]] && usage
+
+
+ROOT=$(git rev-parse --show-toplevel)
+[[ -n "$ROOT" ]] || exit 1
+
+#https://stackoverflow.com/questions/424071/how-to-list-all-the-files-in-a-commit
+if [[ -n "$1" ]]
+then
+    git diff-tree --no-commit-id --name-only -r $1 | awk -v root=$ROOT '{print root"/"$1}'
+else
+    git status --porcelain | grep -v '^.*swp$' | awk -v root=$ROOT '{print root"/"$2}'
+fi

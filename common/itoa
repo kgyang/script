@@ -1,0 +1,25 @@
+#!/bin/bash
+
+usage()
+{
+    echo "translate hex integer to string
+Usage:
+1) echo '31 be' | itoa
+2) ./itoa 32 be" >&2
+    exit 1 
+}
+
+[[ "$1" == "-h" ]] && usage
+
+translate()
+{
+    awk '{for(i=1; i<=NF; i++) printf("%c",strtonum("0x"$i));}'
+}
+
+if [[ $# -eq 0 ]]
+then
+    translate
+else
+    translate <<< "$*"
+fi
+echo

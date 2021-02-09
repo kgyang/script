@@ -1,0 +1,22 @@
+#!/bin/bash
+
+usage()
+{
+    echo "download cs143(compilers design) pdf documents listed in the page" >&2
+    exit 1
+}
+
+[[ "$1" == "-h" ]] && usage
+
+export https_proxy='10.158.100.2:8080'
+export http_proxy='10.158.100.2:8080'
+
+cs143="https://web.stanford.edu/class/archive/cs/cs143/cs143.1128/"
+curl $cs143 | while read line
+do
+    pdf=$(sed -n 's/.*<a href="\(.*pdf\).*/\1/p' <<< $line)
+    [[ -n "$pdf" ]] || continue
+    echo $pdf
+    curl "${cs143}${pdf// /%20}" > "$(basename ${pdf// /_})" || break
+    sleep 2
+done

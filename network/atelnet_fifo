@@ -1,0 +1,77 @@
+#!/bin/ksh
+
+USER=''
+PASSWORD=''
+
+usage()
+{
+    #http://unix.stackexchange.com/questions/53641/how-to-make-bidirectional-pipe-between-two-programs
+    echo "automatic telnet by making temp fifo" >&2
+    echo "Usage: $(basename ${0}) <NE>" >&2
+    exit 1
+}
+
+[[ "$1" == "-h" ]] && usage
+
+send_to_ne()
+{
+	echo "$1\n"
+}
+
+wait_ne_response()
+{
+	# wait 10 seconds for response
+	timeout=10
+	while read -t $timeout res
+	do
+		echo $res >&2
+		echo $res | grep -q "$1" && return 0
+	done 
+	echo "timeout to wait for NE response" >&2
+	exit 1
+}
+
+read_ne_response()
+{
+	while read res
+	do
+		echo $res >&2
+	done
+}
+
+[ $# -eq 1 ] || { echo "$0 <NE>" >&2; exit 1; }
+
+NE=$1
+
+set -x
+set -e
+
+rm -f fifo_to_telnet fifo_to_main
+mkfifo fifo_to_telnet fifo_to_main
+
+telnet $NE -l $USER < fifo_to_telnet > fifo_to_main &
+
+{
+#login
+wait_ne_response "Connected"
+sleep 2
+send_to_ne $PASSWORD
+wait_ne_response "Last login:"
+sleep 1
+
+#group commands to be sent
+cmds='{
+ls /
+exit
+}
+'
+send_to_ne "$cmds"
+
+read_ne_response
+} > fifo_to_telnet < fifo_to_main
+
+
+wait
+
+rm -f fifo_to_telnet fifo_to_main
+

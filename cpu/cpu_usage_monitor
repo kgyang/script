@@ -1,0 +1,150 @@
+#!/bin/bash
+
+usage()
+{
+    echo "cpu usage monitor" >&2
+# refer to http://www.orczhou.com/index.php/2013/10/how-linux-caculate-cpu-usage-for-process/
+    exit 1
+}
+
+[[ "$1" == "-h" ]] && usage
+
+get_cpu_stat ()
+{
+	head -n 1 /proc/stat
+}
+
+get_proc_stat ()
+{
+	head -n 1 /proc/$1/stat
+}
+
+get_thread_stat ()
+{
+	head -n 1 /proc/$1/task/$2/stat
+}
+
+get_cpu_tick ()
+{
+	awk '{for(i=2;i<=NF;i++)ticks+=$i; print ticks;}' <<< "$1"
+}
+
+get_proc_tick ()
+{
+	awk '{print $14+$15+$16+$17}' <<< "$1"
+}
+
+get_thread_tick ()
+{
+	awk '{print $14+$15+$16+$17}' <<< "$1"
+}
+
+proc_stats_file=$HOME/scan_cpu_usage.stat.$$
+stat_interval=10
+
+thread_names=($(ps -eL | awk 'NR>2 && $1!=$2 {print $5}'))
+thread_pids=($(ps -eL | awk 'NR>2 && $1!=$2 {print $2}'))
+thread_ppids=($(ps -eL | awk 'NR>2 && $1!=$2 {print $1}'))
+thread_num=${#thread_pids[@]}
+
+proc_names=($(ps -ef | awk 'NR>2 && $8 ~ /pureNeApp/ {print $8}'))
+proc_pids=($(ps -ef | awk 'NR>2 && $8 ~ /pureNeApp/ {print $2}'))
+proc_num=${#proc_pids[@]}
+proc_num=0
+
+printf "%-20s%-20s%-20s%-20s\n" "NAME" "PID" "%PEAK" "%AVG"
+
+count=0
+while (( count < 10000 )) ; do
+	let count++
+
+	# save stat before sleep
+	cpu_stat_a="$(get_cpu_stat)"
+	i=0
+	while (( i < $proc_num )) ; do
+		proc_stats_a[$i]="$(get_proc_stat ${proc_pids[$i]})"
+		let i++
+	done
+	i=0
+	while (( i < $thread_num )) ; do
+		thread_stats_a[$i]="$(get_thread_stat ${thread_ppids[$i]} ${thread_pids[$i]})"
+		let i++
+	done
+
+	sleep $stat_interval
+
+	# save proc stat after sleep
+	cpu_stat_b="$(get_cpu_stat)"
+	i=0
+	while (( i < $proc_num )) ; do
+		proc_stats_b[$i]="$(get_proc_stat ${proc_pids[$i]})"
+		let i++
+	done
+	i=0
+	while (( i < $thread_num )) ; do
+		thread_stats_b[$i]="$(get_thread_stat ${thread_ppids[$i]} ${thread_pids[$i]})"
+		let i++
+	done
+
+	# calculate cpu usage
+	cpu_tick_a=$(get_cpu_tick "$cpu_stat_a")
+	cpu_tick_b=$(get_cpu_tick "$cpu_stat_b")
+	cpu_tick_peak=$(( cpu_tick_b - cpu_tick_a ))
+	cpu_tick_total=$(( cpu_tick_total + cpu_tick_peak ))
+
+	i=0
+	while (( i < $proc_num )) ; do
+		[ -n "${proc_stats_a[$i]}" -a -n "${proc_stats_b[$i]}" ] || {
+			 echo "fail to get proc stat of ${proc_names[$i]}" >&2
+			 exit 1
+		}
+		proc_tick_a=$(get_proc_tick "${proc_stats_a[$i]}")
+		proc_tick_b=$(get_proc_tick "${proc_stats_b[$i]}")
+		proc_ticks_peak[$i]=$(( $proc_tick_b - $proc_tick_a ))
+		proc_ticks_total[$i]=$(( ${proc_ticks_total[$i]} + ${proc_ticks_peak[$i]} ))
+		proc_cpu_usages_peak[$i]=$(awk '{printf "%5.2f", $1*100.0/$2}' <<< "${proc_ticks_peak[$i]} $cpu_tick_peak")
+		proc_cpu_usages_avg[$i]=$(awk '{printf "%5.2f", $1*100.0/$2}' <<< "${proc_ticks_total[$i]} $cpu_tick_total")
+		let i++
+	done
+
+	i=0
+	while (( i < $thread_num )) ; do
+		[ -n "${thread_stats_a[$i]}" -a -n "${thread_stats_b[$i]}" ] || {
+			 echo "fail to get proc stat of ${proc_names[$i]}" >&2
+			 exit 1
+		}
+		thread_tick_a=$(get_thread_tick "${thread_stats_a[$i]}")
+		thread_tick_b=$(get_thread_tick "${thread_stats_b[$i]}")
+		thread_ticks_peak[$i]=$(( $thread_tick_b - $thread_tick_a ))
+		thread_ticks_total[$i]=$(( ${thread_ticks_total[$i]} + ${thread_ticks_peak[$i]} ))
+		thread_cpu_usages_peak[$i]=$(awk '{printf "%5.2f", $1*100.0/$2}' <<< "${thread_ticks_peak[$i]} $cpu_tick_peak")
+		thread_cpu_usages_avg[$i]=$(awk '{printf "%5.2f", $1*100.0/$2}' <<< "${thread_ticks_total[$i]} $cpu_tick_total")
+		let i++
+	done
+
+
+
+	i=0
+	while (( i < $proc_num )) ; do
+		(( ${proc_ticks_peak[$i]} > 0 )) && {
+			echo "${proc_ticks_peak[$i]} $(basename ${proc_names[$i]}) ${proc_pids[$i]} ${proc_cpu_usages_peak[$i]} ${proc_cpu_usages_avg[$i]}"
+		}
+		let i++
+	done | sort -n -r -k 1 | awk '{printf "%-20s%-20s%-20s%-20s\n",$2,$3,$4,$5}'
+
+	echo "----------------------------------------------------------------------"
+
+	i=0
+	while (( i < $thread_num )) ; do
+		(( ${thread_ticks_peak[$i]} > 0 )) && {
+			echo "${thread_ticks_peak[$i]} $(basename ${thread_names[$i]}) ${thread_pids[$i]} ${thread_cpu_usages_peak[$i]} ${thread_cpu_usages_avg[$i]}"
+		}
+		let i++
+	done | sort -n -r -k 1 | awk '{printf "%-20s%-20s%-20s%-20s\n",$2,$3,$4,$5}'
+
+
+	echo "======================================================================"
+
+done
+
+exit 0

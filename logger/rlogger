@@ -1,0 +1,65 @@
+#!/bin/bash
+
+usage()
+{
+    echo "This script is used to read log from fifo in remote machine" >&2
+    echo "Usage: $(basename $0) -n <IP> [-t <HOURS>]" >&2
+    echo "-m: master mode, in which script will close fifo before exit" >&2
+    exit 1
+}
+
+HOURS=24
+while getopts :n:th opt; do
+    case $opt in
+    n) IP=$OPTARG;;
+    t) HOURS=$OPTARG;;
+    h) usage;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+[[ -n "$IP" && $HOURS -gt 0 ]] || usage
+
+SECONDS=$((HOURS*3600))
+
+LOG_FIFO='/tmp/log.fifo'
+
+login_machine()
+{
+    sleep 1
+    echo "user"
+    sleep 1
+    echo "password"
+    sleep 1
+}
+
+start_monitor()
+{
+    # start log monitoring
+    echo "[ -p $LOG_FIFO ] && cat < $LOG_FIFO"
+    sleep 1
+}
+
+stop_monitor()
+{
+    # send ctrl-C to stop tailing output
+    echo $'\cc'
+    sleep 1
+}
+
+wait_for_break()
+{
+    trap '' INT
+    echo 'Press Ctrl+D to interrupt' >> /dev/tty
+    while read -t $SECONDS any
+    do
+        :
+    done < $(tty)
+}
+
+{
+    login_machine
+    start_monitor
+    wait_for_break
+    stop_monitor
+} | telnet $IP | tr -cd '[:print:]\t\n'

@@ -1,0 +1,89 @@
+#!/bin/ksh
+
+usage()
+{
+    echo "synchronize checked out files in current clearcase view from FTP SERVER to local Linux machine" >&2
+    exit 1
+}
+
+[[ "$1" == "-h" ]] && usage
+
+function check_connection
+{
+    printf "check connection..." >&2
+    ping -c 1 -W 2 $REMOTEHOST >> /dev/null && {
+        echo "pass" >&2
+        return 0
+    }
+    echo "blocked\nuse account to do authentication..." >&2
+    ftp $REMOTEHOST
+    ping -c 1 -W 2 $REMOTEHOST >> /dev/null && {
+        return 0
+    }
+    echo "connection blocked" >&2
+    return 1
+}
+
+[[ -n "$CLEARCASE_ROOT"  ]] || { echo "not in view" >&2 ; exit 1; }
+
+[[ -n "$REMOTEHOST_ROOT" && -n "$REMOTEHOST_USERNAME" && -n "$REMOTEHOST_PASSWORD" ]] || {
+    echo "please export following environment variables:" >&2;
+    echo "export REMOTEHOST_ROOT='root directory of code on remote host'" >&2;
+    echo "export REMOTEHOST_USERNAME='username to login FTP server on remote host'" >&2;
+    echo "export REMOTEHOST_PASSWORD='password to login FTP server on remote host'" >&2;
+    exit 1;
+}
+
+# determine checked out files 
+files=$(lsco)
+[[ -n "$files" ]] || { echo "no checked out files" >&2; exit 1; }
+
+# for SSH session, get REMOTEHOST from SSH_CLIENT environment variable
+[[ -n "$REMOTEHOST" ]] || {
+    [[ -n "$SSH_CLIENT" ]] && {
+        REMOTEHOST=$(\
+        sed -e "s/[^[:digit:]]*\([[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\).*/\1/" <<< $SSH_CLIENT)
+    }
+}
+[[ -n "$REMOTEHOST" ]] || { echo "unknown remote host, exit" >&2; exit 1; }
+
+check_connection || exit 1
+
+echo "connecting to ftp server on $REMOTEHOST..." >&2
+
+# download files from remote host via FTP
+echo "" >&2
+ftp -n $REMOTEHOST << SCRIPT
+user "$REMOTEHOST_USERNAME" "$REMOTEHOST_PASSWORD"
+binary
+verbose
+
+$(
+for file in $files; do
+    dir=$(dirname $file)
+    [[ "${dir:0:1}" != "/" ]] && dir=$PWD/$dir
+    echo "cd $REMOTEHOST_ROOT$dir"
+    echo "lcd $(dirname ${file})"
+    echo "get $(basename ${file}) $(basename ${file}).p"
+done
+)
+
+quit
+
+SCRIPT
+
+# check download result then update if changed
+echo "" >&2
+echo "list of files updated" >&2
+for file in $files; do
+    # report file not downloaded
+    [[ -f "$file.p" ]] || { echo $'\e'"[31;1mfails to download $file"$'\e'"[0m" >&2; continue; }
+    dos2unix -q $file.p
+    # only update the file changed (to avoid changing file timestamps for the file unchanged)
+    cmp -s $file $file.p || { cp $file.p $file && echo "$file" >&2; }
+    rm -f $file.p
+done
+echo "" >&2
+
+exit 0
+

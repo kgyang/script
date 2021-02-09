@@ -1,0 +1,14 @@
+#!/bin/ksh 
+
+usage()
+{
+    echo "build cscope files for source files in specified directory" >&2
+    echo "Usage: $(basename $0) <dirname>" >&2
+    exit 1
+}
+
+[[ -d "$1" ]] || usage
+
+find $1 -name "*.h" -o -name "*.hh" -o -name "*.c" -o -name "*.cc" > ~/cscope.files 
+cscope -bR -i cscope.files 
+#ctags -R

@@ -1,0 +1,88 @@
+#!/bin/ksh
+
+usage()
+{
+    echo "upload directory specified to ftp server" >&2
+    echo "Usage: $(basename ${0}) <ldir> <rdir>" >&2
+    exit 1
+}
+
+[[ "$1" == "-h" ]] && usage
+
+determine_ftp_server()
+{
+    FTP_SERVER=''
+    FTP_LOGNAME=$PC_FTP_LOGNAME
+    FTP_PASSWD=$PC_FTP_PASSWORD
+    [[ -n $FTP_SERVER ]] || {
+        if [[ -n $REMOTEHOST ]]; then
+            FTP_SERVER=$REMOTEHOST
+        elif [[ -n $SSH_CLIENT ]]; then
+            FTP_SERVER=$(echo ${SSH_CLIENT} | \
+            sed -e "s/[^[:digit:]]*\([[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\).*/\1/")
+        fi
+    }
+    [[ -n $FTP_SERVER ]] || { echo "unknown server, exit" 1>&2 ; exit 1; }
+}
+
+do_authentication()
+{
+    echo "check connection..."
+    ping -c 1 -W 2 $FTP_SERVER >> /dev/null || { echo "fail, connection still blocked" >&2; exit 1; }
+}
+
+put_dir()
+{
+    dir=$1
+    cd $dir
+    echo "cd $dir"
+    echo "lcd $dir"
+    for f in *
+    do
+        if [[ -f $f ]]
+        then
+            echo "put $(basename $f)"
+        elif [[ -d $f && $f != "lib" && $f != "obj" && $f != "bin" ]]
+        then
+            put_dir $f
+        fi
+    done
+    [[ $dir != '.' ]] && {
+        cd ..
+        echo "cd .."
+        echo "lcd .."
+    }
+}
+
+upload_dir()
+{
+ftp -n $FTP_SERVER << SCRIPT
+user $FTP_LOGNAME $FTP_PASSWD
+binary
+verbose
+
+lcd $1
+cd $2
+
+$(
+put_dir '.'
+)
+
+quit
+
+SCRIPT
+}
+
+[ $# -eq 2 ] || usage
+LOCAL_DIR=$1
+REMOTE_DIR=$2
+[ -d $LOCAL_DIR ] || { echo "$LOCAL_DIR is not directory" >&2; exit 1; }
+
+determine_ftp_server
+
+do_authentication
+
+upload_dir $LOCAL_DIR $REMOTE_DIR
+
+exit 0
+

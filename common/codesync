@@ -1,0 +1,48 @@
+#!/bin/bash
+
+usage()
+{
+    echo "sync source code between two git repositories" >&2
+    echo "Usage: $(basename $0) <to|from> <remote>" >&2
+    exit 1
+}
+
+direction=$1
+[[ "$direction" == "to" || "$direction" == "from" ]] || usage
+
+remotedir=$2
+[[ -d $remotedir ]] || { echo "unknown remote repository" >&2; exit 1; }
+
+localdir=$(git rev-parse --show-toplevel 2>/dev/null)
+[[ -n "$localdir" ]] || { echo "not in local repository" >&2; exit 1; }
+[[ -d $localdir/src && -d $localdir/inc ]] || { echo "not in local repository" >&2; exit 1; }
+
+if [[ "$direction" == "to" ]]
+then
+    srcdir=$localdir
+    dstdir=$remotedir
+else
+    srcdir=$remotedir
+    dstdir=$localdir
+fi
+
+[[ -d $srcdir ]] && {
+    cd $srcdir
+    src_change=$(git status --porcelain)
+}
+
+[[ -d $dstdir ]] && {
+    cd $dstdir
+    dst_change=$(git status --porcelain)
+}
+
+if [[ -n "$dst_change" && -z "$src_change" ]]
+then
+    echo "abort due to code change in $dstdir" >&2
+    echo "$dst_change" >&2
+    exit 1
+fi
+
+# use -c to enable checksum check, use -C to skip git files
+set -x
+rsync -rlpgovmcC --exclude='obj*/' --exclude='.*' --exclude='*~' $srcdir/ $dstdir/

@@ -1,0 +1,86 @@
+#!/bin/ksh
+
+usage()
+{
+    echo "save all clearcase checkout files along with their version info in a tar file.
+
+Usage: co-save [CO_SAVE_FILE]
+if CO_SAVE_FILE is not specifed, 'co-VIEWNAME-DATETIME.tar' is named. 
+The CO_SAVE_FILE is used by 'co-restore' to restore the checkout files to another view." >&2
+    exit 1
+}
+
+[[ "$1" == "-h" ]] && usage
+
+WORKSPACE=/tmp/$LOGNAME/co-save
+VERSION_INFO_FILE=checkouts.version
+
+fail()
+{
+	echo "$*" >&2
+	exit 1
+}
+
+pre_version () {
+	# this function could be replaced by script 'pred'
+	[ -f "$1" ] || fail "$1 not exist"
+
+	v=$(cleartool desc -short -pre $1)
+
+	[ "${v:0:9}" = "/main/tmp" ] && {
+		v=$(cleartool desc $1 | \
+		sed -n -e '/muck/ s/  "muck (starting with version \(.*\))"/\1/p')
+	}
+	[ -n "$v" ] || fail "fail to get version of $1"
+	echo $v
+}
+
+[ -n "$CLEARCASE_ROOT" ] || fail "not in view"
+
+CO_SAVE_FILE=${1-co_${CLEARCASE_ROOT##*/}_$(date +%F_%H-%M-%S).tar}
+
+# check access
+PKG_DIR=$(dirname $CO_SAVE_FILE)
+[ -w $PKG_DIR ] || fail "$PKG_DIR not writable"
+[ "${PKG_DIR:0:1}" == "/" ] || PKG_DIR=$PWD/$PKG_DIR
+CO_SAVE_FILE=$PKG_DIR/$(basename $CO_SAVE_FILE)
+
+# go to work space
+rm -rf $WORKSPACE
+mkdir -p $WORKSPACE
+cd $WORKSPACE
+
+# interrupt operation in any case
+set -e
+
+# collect checked-out files
+if [[ -n "$CO_SAVE_CHECKOUTS" ]]
+then
+	checkouts="$CO_SAVE_CHECKOUTS"
+else
+	checkouts=$(lsco)
+fi
+[[ -n "$checkouts" ]] || fail "no checked-out files"
+
+# dos2unix
+#dos2unix -q $checkouts
+
+# record checked out version in VERSION_INFO_FILE
+for file in $checkouts ; do
+	sourceversion=$(pre_version $file)
+	echo "$file $sourceversion" | tee -a $VERSION_INFO_FILE
+done
+
+# backup old package
+[[ -f $CO_SAVE_FILE ]] && {
+	suffix=$(stat -c %X $CO_SAVE_FILE | awk '{print strftime("%F_%H-%M-%S",$1)}')
+	mv $CO_SAVE_FILE $CO_SAVE_FILE.$suffix
+	echo "old $CO_SAVE_FILE is moved to $CO_SAVE_FILE.$suffix"
+}
+
+# packaging
+tar -cPf $CO_SAVE_FILE $checkouts $VERSION_INFO_FILE
+
+# done
+echo "checkouts have been saved in $CO_SAVE_FILE"
+

@@ -1,0 +1,28 @@
+#!/bin/bash
+
+usage()
+{
+    echo "remove unprintable in files" >&2
+    echo "Usage: $(basename $0) <file...>" >&2
+    exit 1
+}
+
+prune_file()
+{
+    cat $1 | tr -cd '[:print:]\t\n' > $TMPFILE
+    cmp -s $1 $TMPFILE || {
+        cp $TMPFILE $1
+        echo "binaries are removed in $1"
+    }
+}
+
+[[ $# -eq 0 || "$1" == "-h" || "$1" == "--help" ]] && usage
+
+TMPFILE=$(mktemp)
+trap "rm $TMPFILE" EXIT
+
+for f in $*
+do
+    [[ -f $f && -w $f ]] || { echo "skip $f: not writable file" >&2; continue; }
+    prune_file $f
+done

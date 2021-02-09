@@ -1,0 +1,41 @@
+#!/bin/sh
+
+usage()
+{
+    echo "get/put files from/to peer server via sftp" >&2
+    echo "Usage: $(basename ${0}) <get|put> <filename>..." >&2
+    exit 1
+}
+
+[[ "$1" == "-h" ]] && usage
+
+fail()
+{
+    echo "$*" >&2
+    exit 1
+}
+
+do_sftp()
+{
+    echo "sftp to $REMOTE_SERVER ..."
+    echo ""
+    for file in $FILES
+    do
+        echo "lcd $(dirname $file)"
+        echo "$CMD $(basename $file)"
+    done | sftp -b - $REMOTE_LOGNAME@$REMOTE_SERVER
+}
+
+
+[[ $# -gt 1 ]] || usage
+
+CMD=$1
+[[ $CMD == 'get' || $CMD == 'put' ]] || usage
+
+shift
+FILES="$@"
+
+[[ -n "$REMOTE_SERVER" ]] || fail 'please export REMOTE_SERVER'
+[[ -n "$REMOTE_LOGNAME" ]] || fail 'please export REMOTE_LOGNAME'
+
+do_sftp

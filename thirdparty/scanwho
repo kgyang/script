@@ -1,0 +1,39 @@
+#!/bin/ksh
+
+ne='
+135.252.216.222
+135.252.216.223
+135.252.216.224
+135.252.216.218
+135.252.216.219
+135.252.216.220
+135.252.216.214
+135.252.216.215
+135.252.216.216
+135.252.216.210
+135.252.216.211
+135.252.216.212
+135.252.216.202
+135.252.216.203
+135.252.216.204
+135.252.216.206
+135.252.216.207
+135.252.216.208'
+
+for n in $ne ; do
+	echo "logins on $n:"
+	ping -c 1 -W 2 $n >> /dev/null || continue
+	{
+		sleep 1
+		echo "$LOGNAME"
+		sleep 1
+		echo "$LOGIN_PASSWORD"
+		sleep 1
+		echo "who"
+		sleep 1
+	} | telnet $n | awk 'BEGIN{print_on="";}/who/{print_on=1;}{if (print_on) print}'
+	#} | telnet $n |& sed -n -e '/^[0-9]/ p'
+done
+
+exit 0
+

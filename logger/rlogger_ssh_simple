@@ -1,0 +1,14 @@
+#!/bin/bash
+
+usage()
+{
+    echo "This script is used to read log from remote machine without time limitation" >&2
+    echo "Usage: $(basename $0) <IP>" >&2
+    exit 1
+}
+[[ "$1" == "-h" ]] && usage
+
+IP=$1
+[[ -n "$IP" ]] || usage
+
+ssh -p 22 root@$IP '[[ -p /tmp/log.fifo ]] && cat < /tmp/log.fifo' | tr -cd '[:print:]\t\n'

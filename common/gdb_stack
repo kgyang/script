@@ -1,0 +1,50 @@
+#!/bin/ksh
+
+usage()
+{
+    echo "run gdb to analyse stack" >&2
+    echo "$0 <exefile> <coredump>" >&2
+    exit 1
+}
+
+[[ "$1" == "-h" ]] && usage
+EXE=$1
+CORE=$2
+[[ -f "$EXE" && -f "$CORE" ]] || usage
+
+GDB=''
+ARCH=$(file -L $EXE | awk -F',' '{print $2}' | tr -d " ")
+case $ARCH in
+    PowerPC* )
+        exit
+    ARM )
+        exit
+    * )
+        echo "Target=sim"
+        GDB=gdb
+        ;;
+esac
+[[ -f $GDB ]] || { echo "$GDB for $ARCH is not found" >&2; exit 1; }
+
+LINE=$(readelf -S $EXE | grep .text)
+#[12] .text             PROGBITS        00097840 08f840 2c1498 00  AX  0   0  8
+TEXT_START=$((0x$(awk '{print $4}' <<< $LINE) + 0))
+TEXT_END=$(($TEXT_START + 0x$(awk '{print $6}'<<< $LINE)))
+echo "text section range: $TEXT_START $TEXT_END"
+
+ADDRESSES=$($GDB -batch -ex 'x/2048x $sp' -core=$CORE | awk -v s=$TEXT_START -v e=$TEXT_END '
+NF==5 {for (i=2;i<=5;i++) { a=strtonum($i); if (a>=s && a<=e) print a; } }')
+
+TMP=/tmp/gdbinfo.$$
+trap "rm -rf $TMP" EXIT
+
+for a in $ADDRESSES
+do
+    echo "l *$a" >> $TMP
+done
+echo "info registers" >> $TMP
+echo "bt" >> $TMP
+#echo 'x/2048x $sp' >> $TMP
+#echo "info frame" >> $TMP
+
+$GDB -batch -s $EXE -core=$CORE -x $TMP

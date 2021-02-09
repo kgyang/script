@@ -1,0 +1,12 @@
+
+alias vi=vim
+alias ll='ls -l'
+alias ltr='ls -ltr'
+#https://stackoverflow.com/questions/32597209/python-not-working-in-the-command-line-of-git-bash
+alias python='winpty -Xallow-non-tty python'
+
+export TERM=xterm-256color
+export PS1='${PWD} $ '
+export PATH=$HOME/script:$(for d in $HOME/script/*; do [ -d $d ] && printf ${d}:; done)${PATH}
+
+. /$HOME/script/rc.d/setupworkspace.sh

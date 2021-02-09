@@ -1,0 +1,164 @@
+#!/bin/bash
+usage()
+{
+    echo "This script prints out cppcheck results of code changes.
+The code changes could be uncommitted (by default) or commit specified.
+It returns 1 if there're error or warning reports." >&2
+    echo >&2
+    echo "Usage: git-cppcheck [<commit|file>...]" >&2
+    echo >&2
+    echo "Examples:" >&2
+    echo "git-cppcheck        -- check uncommitted code changes" >&2
+    echo "git-cppcheck HEAD   -- check code changes in latest commit" >&2
+    echo "git-cppcheck 03c58d -- check code changes in commit" >&2
+    echo "git-cppcheck *.cc   -- check files" >&2
+    exit 1
+}
+
+cppcheck_files()
+{
+    {
+    _outformat=--template="{file}:{line},{severity},{id},{message}"
+    cppcheck $_outformat -D__cplusplus=201103L --enable=warning,style,performance --inconclusive --inline-suppr $* 2>&1
+    } | awk -F',' 'NF==4 {print}'
+}
+
+cppcheck_commit_file()
+{
+    _commit=$1
+    _file=$2
+    _cf=$(dirname $_file)/_${_commit}_$(basename $_file)
+    trap "rm -f $_cf" EXIT
+    git show ${_commit}:$_file > $_cf
+    cppcheck_files $_cf | sed "s#$_cf#$_file#g"
+    rm -f $_cf
+    trap '' EXIT
+}
+
+diff_file_output_new_line()
+{
+    diff --unchanged-line-format="" --old-line-format="" --new-line-format="%dn %L" $1 $2
+}
+
+cppcheck_commit()
+{
+    which cppcheck > /dev/null 2>&1 || { echo "no cppcheck installed" >&2; return 0; }
+
+    COMMIT=$1
+    if [[ -n "$COMMIT" ]]
+    then
+        echo "Checking code changes in commit $COMMIT ..." >&2
+        BASE_COMMIT="${COMMIT}^"
+    else
+        echo "Checking uncommitted code changes ..." >&2
+        BASE_COMMIT=HEAD
+    fi
+
+    # go to workspace root
+    GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+    [[ -n "$GIT_ROOT" ]] || { echo "not in git repository" >&2; return 1; }
+
+    cd $GIT_ROOT
+
+    # commit validation
+    [[ -n "$COMMIT" ]] && {
+        git cat-file -e $COMMIT 2>/dev/null || {
+            echo "invalid commit $COMMIT" >&2
+            return 1
+        }
+    }
+
+    # filter all source files
+    if [[ -n "$COMMIT" ]]
+    then
+        _files=$(git diff --name-status ${BASE_COMMIT} ${COMMIT})
+    else
+        _files=$(git status --porcelain)
+    fi
+    _files=$(grep '\.\(c\|cpp\|cc\|cxx\|C\)$' <<< "$_files")
+    [[ -n "$_files" ]] || return 0
+
+    _new_files=$(awk '$1=="A" || $1=="??" {print $2}' <<< "$_files")
+    _change_files=$(awk '$1=="M" {print $2}' <<< "$_files")
+
+    _ret=0
+
+    # cppcheck added files, any issues are reported as failure
+    [[ -n "$_new_files" ]] && {
+        for file in $_new_files
+        do
+            echo ">>> checking $file ..."
+            if [[ -n "$COMMIT" ]]
+            then
+                _lines=$(cppcheck_commit_file $COMMIT $file)
+            else
+                _lines=$(cppcheck_files $file)
+            fi
+            grep -q ',error,\|,warning,' <<< "$_lines" && _ret=1
+            echo "$_lines"
+        done
+    }
+
+    [[ -n "$_change_files" ]] || return $_ret
+
+    # temporary files
+    _a=$HOME/.cppcheck_a
+    _b=$HOME/.cppcheck_b
+    _a_nolinenumber=$HOME/.cppcheck_a_nolinenumber
+    _b_nolinenumber=$HOME/.cppcheck_b_nolinenumber
+
+    # cppcheck modified files, any issues in code change are reported as failure
+    for file in $_change_files
+    do
+        echo ">>> checking $file ..."
+
+        cppcheck_commit_file $BASE_COMMIT $file > $_a
+
+        if [[ -n "$COMMIT" ]]
+        then
+            cppcheck_commit_file $COMMIT $file > $_b
+        else
+            cppcheck_files $file > $_b
+        fi
+
+        # filter out filename, linenumber in cppcheck results
+        # note: it should be changed upon cppcheck output format change
+        sed 's/^[^,]*//' $_a > $_a_nolinenumber
+        sed 's/^[^,]*//' $_b > $_b_nolinenumber
+
+        # filter new issues in cppcheck results
+        _lines=$(diff_file_output_new_line $_a_nolinenumber $_b_nolinenumber)
+
+        _linenumbers=$(awk '{print $1}' <<< "$_lines")
+
+        # return fail on new error/warning issues
+        grep -q ',error,\|,warning,' <<< "$_lines" && _ret=1
+
+        # print out new issues
+        echo "before: $(wc -l < $_a) issues, after: $(wc -l < $_b) issues"
+        for line in $_linenumbers
+        do
+            sed -n "$line p" $_b
+        done
+    done
+
+    return $_ret
+}
+
+[[ "$1" == '-h' || "$1" == '--help' || "$1" == '?' ]] && usage
+if [[ $# -eq 0 ]]
+then
+    cppcheck_commit
+else
+    for f in $*
+    do
+        if [[ -f $f ]]
+        then
+            echo "Checking $f ..."
+            cppcheck_files $f
+        else
+            cppcheck_commit $f
+        fi
+    done
+
+fi

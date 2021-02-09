@@ -1,0 +1,64 @@
+#!/bin/bash
+
+usage()
+{
+    echo "verfiy trust anchor via SHA-256 calculation" >&2
+    echo "Usage: $(basename $0) <pemfile>" >&2
+    exit 1
+}
+
+[[ "$1" == "-h" ]] && usage
+
+verify_sha256()
+{
+    pemfile=$1
+
+    temppem=$HOME/.temp.verifypem
+    trap "rm -f $temppem" EXIT
+
+    echo "verifying SHA-256 of certificates in $PEM_FILE..."
+    num=0
+    found=0
+    while read line
+    do
+        if grep -Fq -- "SHA-256 Fingerprint = " <<< $line
+        then
+            finger=$(sed -n 's/.*= \(.*\)/\1/p' <<< $line)
+        elif grep -Fq -- "-----BEGIN CERTIFICATE-----" <<< $line
+        then
+            ((num++))
+            found=1
+            echo $line > $temppem
+        elif grep -Fq -- "-----END CERTIFICATE-----" <<< $line
+        then
+            found=0
+            echo $line >> $temppem
+            pemfinger=$(openssl x509 -sha256 -in $temppem -noout -fingerprint | sed -e 's/.*=//; s/://g')
+            [[ "$pemfinger" == "$finger" ]] || {
+                echo "$num: FAIL (finger mismatch)" >&2
+                exit 2
+            }
+            echo "$num: OK"
+        elif [[ $found -eq 1 ]]
+        then
+            echo $line >> $temppem
+        fi
+    done < $pemfile
+
+    [[ $found -eq 0 ]] || {
+        echo "$num: FAIL (incomplete certificate)" >&2
+        exit 3
+    }
+
+    echo "$num certificates are verified"
+}
+
+[[ $# -eq 1 ]] || usage
+
+PEM_FILE=$1
+[[ -f "$PEM_FILE" ]] || {
+    echo "$PEM_FILE is not found" >&2
+    exit 1
+}
+
+verify_sha256 $PEM_FILE

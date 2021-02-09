@@ -1,0 +1,55 @@
+#!/bin/bash
+
+#https://unix.stackexchange.com/questions/81998/understanding-of-diff-output/216154
+#`LaR'
+#    Add the lines in range R of the second file after line L of the
+#    first file.  For example, `8a12,15' means append lines 12-15 of
+#    file 2 after line 8 of file 1; or, if changing file 2 into file 1,
+#    delete lines 12-15 of file 2.
+
+#`FcT'
+#    Replace the lines in range F of the first file with lines in range
+#    T of the second file.  This is like a combined add and delete, but
+#    more compact.  For example, `5,7c8,10' means change lines 5-7 of
+#    file 1 to read as lines 8-10 of file 2; or, if changing file 2 into
+#    file 1, change lines 8-10 of file 2 to read as lines 5-7 of file 1.
+
+#`RdL'
+#    Delete the lines in range R from the first file; line L is where
+#    they would have appeared in the second file had they not been
+
+usage()
+{
+    echo "$0 <file1> <file2>" >&2
+    echo 'identical to "diff -u diff1 diff2 | diffstat' >&2
+    exit
+}
+
+[[ $# -eq 2 && -f "$1" && -f "$2" ]] || usage
+
+diffs="$(diff $1 $2 | grep -v '>' | grep -v '<' | grep -v '\-')"
+
+cal_range()
+{
+	awk -F',' 'NF==1{n+=1}NF==2{n+=($2-$1+1)}END{print n}'
+}
+
+#75c75
+#148,149c156,161
+c_f=$(awk -F'c' 'NF==2{print $1}' <<< "$diffs" | cal_range)
+c_t=$(awk -F'c' 'NF==2{print $2}' <<< "$diffs" | cal_range)
+
+#260a318
+#100a100,103
+a=$(awk -F'a' 'NF==2{print $2}' <<< "$diffs" | cal_range)
+
+#506d657
+#1525,1543d1685
+d=$(awk -F'd' 'NF==2{print $1}' <<< "$diffs" | cal_range)
+
+(( a=$a+$c_t ))
+(( d=$d+$c_f ))
+
+echo "insertions $a deletions $d"
+
+

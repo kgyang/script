@@ -1,0 +1,28 @@
+#!/bin/bash
+
+usage()
+{
+    echo "find out the commit which made the given code change" >&2
+    echo "Usage: $(basename $0) <text> <file>" >&2
+    exit 1
+}
+
+[[ "$1" == "-h" ]] && usage
+
+
+text=$1
+file=$2
+
+[[ -f "$file" ]] || { echo "$file not found" >&2; exit 1; }
+
+commits="$(git log --no-color --oneline -n 50 $file | awk '{ print $1; }')"
+
+for commit in $commits
+do
+	git show --no-color $commit $file | grep '^\+' | grep -q -F "$text" && {
+		git show -s $commit >&2
+		exit 0
+	}
+done
+
+exit 1

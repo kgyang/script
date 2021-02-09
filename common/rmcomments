@@ -1,0 +1,32 @@
+#!/bin/bash
+
+usage()
+{
+    echo "remove c/c++ comments" >&2
+    echo "Usage: $(basename $0) <file...>" >&2
+    exit 1
+}
+
+[[ $# -gt 0 && "$1" != "-h" ]] || usage
+
+for f in $*
+do
+    [[ -f $f ]] || { echo "$f is not file" >&2; exit 1; }
+
+    # do not touch file without comments
+    grep -q '/\*\|//' $f || continue
+
+    # delete single line comment //
+    sed -i '/^[[:space:]]*\/\// d' $f
+    sed -i 's#[[:space:]]*//.*##' $f
+
+    # delete single line comment /**/
+    sed -i '/^[[:space:]]*\/\*.*\*\/$/ d' $f
+    sed -i 's#[[:space:]]*/\*.*/\*##' $f
+
+    awk '/^[[:space:]]*\/\*/ { del = 1; } { if (!del) print } /\*\/[[:space:]]*$/ { del = 0 }' $f > $f.1
+
+    mv $f.1 $f
+
+    grep -q '/\*\|//' $f && echo "comments in $f are not cleaned" >&2
+done

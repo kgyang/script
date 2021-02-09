@@ -1,0 +1,78 @@
+#!/bin/bash
+
+usage()
+{
+    echo "This script is used to read log from fifo on remote machine" >&2
+    echo "Usage: $(basename $0) [-t <HOURS>] -n <IP>" >&2
+    echo "-t: specify run time (hours), 24 hours by default" >&2
+    exit 1
+}
+
+IP=''
+HOURS=24
+while getopts :t:nh opt; do
+	case $opt in
+	t) HOURS=$OPTARG;;
+	n) IP=$OPTARG;;
+	h) usage;;
+	esac
+done
+shift $(($OPTIND - 1))
+
+[[ -n "$IP" ]] || usage
+[[ "$HOURS" -gt 0 ]] || usage
+
+SECONDS=$((HOURS*3600))
+
+LOG_FIFO='/tmp/log.fifo'
+
+start_monitor()
+{
+    # start log monitoring
+    echo "[ -p $LOG_FIFO ] && cat < $LOG_FIFO"
+    sleep 1
+}
+
+stop_monitor()
+{
+    # send ctrl-C to stop tailing output
+    echo $'\cc'
+    sleep 1
+    echo 'exit'
+}
+
+wait_for_break()
+{
+    trap '' INT
+    echo "Run for $HOURS hours, or press Ctrl+D to interrupt" >> /dev/tty
+    while read -t $SECONDS any
+    do
+        :
+    done < $(tty)
+}
+
+copy_ssh_key()
+{
+    ssh-copy-id -p 22 root@$IP > /dev/null 2>&1 || {
+        sed -i "/${IP}/ d" $HOME/.ssh/known_hosts
+        ssh-copy-id -p 22 root@$IP > /dev/null 2>&1 || {
+            echo 'failed to copy key' >&2
+            exit 1
+        }
+    }
+}
+
+connect_machine()
+{
+#use -tt as per https://superuser.com/questions/594710/ssh-propagate-signal-to-remote-process
+    ssh -tt -p 22 root@$IP
+}
+
+copy_ssh_key
+
+{
+    start_monitor
+    wait_for_break
+    stop_monitor
+} | connect_machine | tr -cd '[:print:]\t\n'
+

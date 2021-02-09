@@ -1,0 +1,15 @@
+#!/bin/bash
+
+usage()
+{
+    echo "remove trailing white space in file" >&2
+    echo "Usage: $0 <file...>" >&2
+    exit 1
+}
+
+[[ -f "$1" ]] || usage
+
+for f in $*
+do
+    [[ -f $f ]] && grep -q '[[:space:]]\+$' $f && sed -i 's/[[:space:]]\+$//' $f
+done
