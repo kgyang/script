@@ -83,8 +83,6 @@ enter_workspace()
             export PS1="\[\e[0;33m\]"'${PWD}($(basename $HB_WORKSPACE))'"\[\e[m\]
 -> "
         fi
-        alias cmhost='hbcm host'
-        alias cmhb='hbcm hb'
 
         set_workspace_repositories
 
