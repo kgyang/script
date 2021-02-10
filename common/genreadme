@@ -28,8 +28,7 @@ readme()
             while read line
             do
                 line=$(sed 's/</\&lt;/g; s/>/\&gt;/g' <<< $line)
-                #display usage as code block
-                echo "    "$line
+                echo "$line<br>"
             done <<< $usage
             echo 
         }
