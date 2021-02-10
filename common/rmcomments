@@ -11,7 +11,10 @@ usage()
 
 for f in $*
 do
-    [[ -f $f ]] || { echo "$f is not file" >&2; exit 1; }
+    [[ -f $f ]] || { echo "$f is not file" >&2; continue; }
+
+    _type=$(file $f)
+    grep -q 'C source' <<< "$_type" || grep -q 'C++ source' <<< "$_type" || continue
 
     # do not touch file without comments
     grep -q '/\*\|//' $f || continue
@@ -22,11 +25,28 @@ do
 
     # delete single line comment /**/
     sed -i '/^[[:space:]]*\/\*.*\*\/$/ d' $f
-    sed -i 's#[[:space:]]*/\*.*/\*##' $f
+    sed -i 's#[[:space:]]*/\*.*\*/##' $f
 
-    awk '/^[[:space:]]*\/\*/ { del = 1; } { if (!del) print } /\*\/[[:space:]]*$/ { del = 0 }' $f > $f.1
+    # delete multiple ine comment /**/
+    awk '
+    {
+        if ($0~/\/\*/) {
+            del = 1
+            sub(/[[:space:]]*\/\*.*/, "")
+            print
+        }
+        else
+        {
+           if (!del) print;
+        }
+    }
+    /\*\// {
+        del = 0
+        sub(/.*\*\//, "")
+        print
+    }' $f > $f.temp
 
-    mv $f.1 $f
+    mv $f.temp $f
 
     grep -q '/\*\|//' $f && echo "comments in $f are not cleaned" >&2
 done
