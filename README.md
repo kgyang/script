@@ -9,7 +9,7 @@
 
 <h2>clearcase/whoci.py</h2>
     Find who added/deleted CODE in FILE in BRANCH (main branch by default)
-    Usage: whoci.py <add|del> <CODE|LINERANGE> <FILE> [BRANCH]
+    Usage: whoci.py &lt;add|del&gt; &lt;CODE|LINERANGE&gt; &lt;FILE&gt; [BRANCH]
     CODE: code piece, LINERANGE: startline,endline
     BRANCH example:
     main - main branch
@@ -21,12 +21,12 @@
     automatic bid for shanghai license (for fun)
 
 <h2>common/codestat</h2>
-    ./codestat <file1> <file2>
+    ./codestat &lt;file1&gt; &lt;file2&gt;
     identical to "diff -u diff1 diff2 | diffstat
 
 <h2>common/codesync</h2>
     sync source code between two git repositories
-    Usage: codesync <to|from> <remote>
+    Usage: codesync &lt;to|from&gt; &lt;remote&gt;
 
 <h2>common/download_cs143</h2>
     download cs143(compilers design) pdf documents listed in the page
@@ -48,15 +48,15 @@
 
 <h2>common/prune_binary</h2>
     remove unprintable in files
-    Usage: prune_binary <file...>
+    Usage: prune_binary &lt;file...&gt;
 
 <h2>common/rm_trailing_space</h2>
     remove trailing white space in file
-    Usage: ./rm_trailing_space <file...>
+    Usage: ./rm_trailing_space &lt;file...&gt;
 
 <h2>common/rmcomments</h2>
     remove c/c++ comments
-    Usage: rmcomments <file...>
+    Usage: rmcomments &lt;file...&gt;
 
 <h2>common/sendmail.py</h2>
     sendmail utility
@@ -66,14 +66,14 @@
 
 <h2>cpu/process_cpu_usage</h2>
     print process cpu usage
-    Usage: ./process_cpu_usage <processname>
+    Usage: ./process_cpu_usage &lt;processname&gt;
 
 <h2>git/git-cppcheck</h2>
     This script prints out cppcheck results of code changes.
     The code changes could be uncommitted (by default) or commit specified.
     It returns 1 if there're error or warning reports.
     
-    Usage: git-cppcheck [<commit|file>...]
+    Usage: git-cppcheck [&lt;commit|file&gt;...]
     
     Examples:
     git-cppcheck -- check uncommitted code changes
@@ -87,101 +87,101 @@
 
 <h2>git/gt_whoci</h2>
     find out the commit which made the given code change
-    Usage: gt_whoci <text> <file>
+    Usage: gt_whoci &lt;text&gt; &lt;file&gt;
 
 <h2>logger/logvisualizer.py</h2>
     plot realtime PTP timestamp information by reading log or connecting MACHINE
-    Usage: logvisualizer.py [-l sync|dlyr|tod|offset|freqoffset] [-v] [-f logfile] [-t <hours>]
+    Usage: logvisualizer.py [-l sync|dlyr|tod|offset|freqoffset] [-v] [-f logfile] [-t &lt;hours&gt;]
     -l: specify type of log to be parsed and shown
     -f: specify logfile to be played back
     -v: verbose mode, in which script will print received log
 
 <h2>logger/rlogger</h2>
     This script is used to read log from fifo in remote machine
-    Usage: rlogger -n <IP> [-t <HOURS>]
+    Usage: rlogger -n &lt;IP&gt; [-t &lt;HOURS&gt;]
     -m: master mode, in which script will close fifo before exit
 
 <h2>logger/rlogger_ssh</h2>
     This script is used to read log from fifo on remote machine
-    Usage: rlogger_ssh [-t <HOURS>] -n <IP>
+    Usage: rlogger_ssh [-t &lt;HOURS&gt;] -n &lt;IP&gt;
     -t: specify run time (hours), 24 hours by default
 
 <h2>logger/rlogger_ssh_simple</h2>
     This script is used to read log from remote machine without time limitation
-    Usage: rlogger_ssh_simple <IP>
+    Usage: rlogger_ssh_simple &lt;IP&gt;
 
 <h2>network/atelnet.py</h2>
     Telnet client class.
-    Usage: atelnet.py [-v] <IP>
+    Usage: atelnet.py [-v] &lt;IP&gt;
     -v: enable verbose
     
     Example 1):
-    >>> from atelnet import ATelnet
-    >>> with ATelnet('135.252.212.251') as tn:
-    >>> rc, res = tn.run('ls /')
-    >>> if rc:
-    >>> for ln in res: print(ln)
+    &gt;&gt;&gt; from atelnet import ATelnet
+    &gt;&gt;&gt; with ATelnet('135.252.212.251') as tn:
+    &gt;&gt;&gt; rc, res = tn.run('ls /')
+    &gt;&gt;&gt; if rc:
+    &gt;&gt;&gt; for ln in res: print(ln)
     
     Example 2):
-    -> { echo 'ls /'; echo 'ls /tmp'; } | ./atelnet.py 1.2.3.4
+    -&gt; { echo 'ls /'; echo 'ls /tmp'; } | ./atelnet.py 1.2.3.4
     
     Example 3):
-    -> ./atelnet.py 1.2.3.4
+    -&gt; ./atelnet.py 1.2.3.4
 
 <h2>network/cli.py</h2>
     CLI client class.
-    Usage: cli.py [-v] <MACHINE>
+    Usage: cli.py [-v] &lt;MACHINE&gt;
     -v: enable verbose'
     Example 1):
-    >>> from cli import Cli
-    >>> with Cli('1.2.3.4') as cli:
-    >>> rc, res = cli.run('help')
-    >>> if rc:
-    >>> for ln in res: print(ln)
+    &gt;&gt;&gt; from cli import Cli
+    &gt;&gt;&gt; with Cli('1.2.3.4') as cli:
+    &gt;&gt;&gt; rc, res = cli.run('help')
+    &gt;&gt;&gt; if rc:
+    &gt;&gt;&gt; for ln in res: print(ln)
     
     Example 2):
-    -> { echo 'help'; } | ./cli.py 1.2.3.4
+    -&gt; { echo 'help'; } | ./cli.py 1.2.3.4
     
     Example 3):
-    -> ./cli.py 1.2.3.4
+    -&gt; ./cli.py 1.2.3.4
 
 <h2>network/itelnet.py</h2>
     Telnet client class for innet.
-    Usage: itelnet.py [-v] <IP> <INNETC> <INNETD> [<LOGIN> <PASSWORD>]
+    Usage: itelnet.py [-v] &lt;IP&gt; &lt;INNETC&gt; &lt;INNETD&gt; [&lt;LOGIN&gt; &lt;PASSWORD&gt;]
     -v: enable verbose
     
     Example 1):
-    >>> from itelnet import ITelnet
-    >>> lc = ITelnet('1.2.3.4', 1, 19)
-    >>> rc, res = lc.run('ls /')
-    >>> if rc:
-    >>> for ln in res: print(ln)
+    &gt;&gt;&gt; from itelnet import ITelnet
+    &gt;&gt;&gt; lc = ITelnet('1.2.3.4', 1, 19)
+    &gt;&gt;&gt; rc, res = lc.run('ls /')
+    &gt;&gt;&gt; if rc:
+    &gt;&gt;&gt; for ln in res: print(ln)
     
     Example 2):
-    -> { echo 'ls /'; echo 'ls /tmp'; } | ./itelnet.py 1.2.3.4 1 19
+    -&gt; { echo 'ls /'; echo 'ls /tmp'; } | ./itelnet.py 1.2.3.4 1 19
     
     Example 3):
-    -> ./itelnet.py 1.2.3.4 1 19
-    -> ./itelnet.py 1.2.3.4 1 2 username password
+    -&gt; ./itelnet.py 1.2.3.4 1 19
+    -&gt; ./itelnet.py 1.2.3.4 1 2 username password
 
 <h2>network/rftp</h2>
     get/put files from/to peer server
-    Usage: rftp <get|put> <filename>...
+    Usage: rftp &lt;get|put&gt; &lt;filename&gt;...
 
 <h2>network/rsftp</h2>
     get/put files from/to peer server via sftp
-    Usage: rsftp <get|put> <filename>...
+    Usage: rsftp &lt;get|put&gt; &lt;filename&gt;...
 
 <h2>trustanchor/buildpem.py</h2>
     build trust anchor
-    Usage: buildpem.py <csvfile> <pemfile>
-    - Input: <csvile>, Output: <pemfile>
+    Usage: buildpem.py &lt;csvfile&gt; &lt;pemfile&gt;
+    - Input: &lt;csvile&gt;, Output: &lt;pemfile&gt;
 
 <h2>trustanchor/verifypem</h2>
     verfiy trust anchor via SHA-256 calculation
-    Usage: verifypem <pemfile>
+    Usage: verifypem &lt;pemfile&gt;
 
 <h2>vps/blockip.sh</h2>
     block ip listed in txt by iptables
-    Usage: ./blockip.sh <start|stop>
+    Usage: ./blockip.sh &lt;start|stop&gt;
 

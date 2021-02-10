@@ -27,7 +27,7 @@ readme()
             echo "<h2>$_d/$f</h2>"
             while read line
             do
-                #l=$(sed 's/</\\</g; s/>/\\>/g; s/\\>\\>\\>/\\>>>/g' <<< $l)
+                line=$(sed 's/</\&lt;/g; s/>/\&gt;/g' <<< $line)
                 #display usage as code block
                 echo "    "$line
             done <<< $usage
