@@ -2,51 +2,63 @@
 
 usage()
 {
-    echo "remove c/c++ comments" >&2
-    echo "Usage: $(basename $0) <file...>" >&2
+    echo "remove C/C++ comments" >&2
+    echo "Usage: $(basename $0) [<file...>]" >&2
     exit 1
 }
 
-[[ $# -gt 0 && "$1" != "-h" ]] || usage
-
-for f in $*
-do
-    [[ -f $f ]] || { echo "$f is not file" >&2; continue; }
-
-    _type=$(file $f)
-    grep -q 'C source' <<< "$_type" || grep -q 'C++ source' <<< "$_type" || continue
-
-    # do not touch file without comments
-    grep -q '/\*\|//' $f || continue
-
-    # delete single line comment //
-    sed -i '/^[[:space:]]*\/\// d' $f
-    sed -i 's#[[:space:]]*//.*##' $f
-
-    # delete single line comment /**/
-    sed -i '/^[[:space:]]*\/\*.*\*\/$/ d' $f
-    sed -i 's#[[:space:]]*/\*.*\*/##' $f
-
-    # delete multiple ine comment /**/
+remove_comment()
+{
+    # remove single line C++ comment
+    sed '/^[[:space:]]*\/\// d' |\
+    # remove single line C comment
+    sed '/^[[:space:]]*\/\*.*\*\/$/ d' |\
+    # remove inline C/C++ comment
+    sed 's#[[:space:]]*//.*##; s#[[:space:]]*/\*.*\*/##' | \
+    # remove multiple line C comments
     awk '
     {
-        if ($0~/\/\*/) {
+        if ($0~/\/\*/ && !del) {
             del = 1
             sub(/[[:space:]]*\/\*.*/, "")
-            print
+            if ($0 != "") print
         }
         else
         {
-           if (!del) print;
+           if (!del) print
         }
     }
     /\*\// {
         del = 0
         sub(/.*\*\//, "")
-        print
-    }' $f > $f.temp
+        if ($0 != "") print
+    }'
+}
 
-    mv $f.temp $f
+remove_comment_in_file()
+{
+    _f=$1
+    [[ -f $_f ]] || { echo "$_f is not file" >&2; return 1; }
 
-    grep -q '/\*\|//' $f && echo "comments in $f are not cleaned" >&2
-done
+    _type=$(file $_f)
+    grep -q 'C source' <<< "$_type" || grep -q 'C++ source' <<< "$_type" || return 1
+
+    # do not touch file without comments
+    grep -q '/\*\|//' $_f || return 0
+
+    cat $_f | remove_comment > $_f.temp && mv $_f.temp $_f
+
+    grep -q '/\*\|//' $_f && echo "comments in $_f are not removed clearly" >&2 && return 1
+}
+
+[[ "$1" == "-h" || "$1" == "--help" ]] && usage
+
+if [[ $# -eq 0 ]]
+then
+    remove_comment
+else
+    for f in $*
+    do
+        remove_comment_in_file $f
+    done
+fi

@@ -55,8 +55,8 @@ remove trailing white space in file<br>
 Usage: ./rm_trailing_space &lt;file...&gt;<br>
 
 <h2>common/rmcomments</h2>
-remove c/c++ comments<br>
-Usage: rmcomments &lt;file...&gt;<br>
+remove C/C++ comments<br>
+Usage: rmcomments [&lt;file...&gt;]<br>
 
 <h2>common/sendmail.py</h2>
 sendmail utility<br>
