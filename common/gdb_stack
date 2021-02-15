@@ -1,8 +1,8 @@
-#!/bin/ksh
+#!/bin/bash
 
 usage()
 {
-    echo "run gdb to analyse stack" >&2
+    echo "run gdb to analyse corrupted stack" >&2
     echo "$0 <exefile> <coredump>" >&2
     exit 1
 }
@@ -17,10 +17,7 @@ ARCH=$(file -L $EXE | awk -F',' '{print $2}' | tr -d " ")
 case $ARCH in
     PowerPC* )
         exit
-    ARM )
-        exit
     * )
-        echo "Target=sim"
         GDB=gdb
         ;;
 esac

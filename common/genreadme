@@ -27,9 +27,9 @@ readme()
             echo "<h2>$_d/$f</h2>"
             while read line
             do
-                line=$(sed 's/</\&lt;/g; s/>/\&gt;/g' <<< $line)
+                line=$(sed 's/</\&lt;/g; s/>/\&gt;/g' <<< "$line")
                 echo "$line<br>"
-            done <<< $usage
+            done <<< "$usage"
             echo 
         }
     done

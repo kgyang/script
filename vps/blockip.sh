@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BLOCKIP_CHAIN=blockip
-IP_DENY_FILE=$HOME/script/ips_deny.txt
+IP_DENY_FILE=ips_deny.txt
 
 bad_ip_in_log()
 {
@@ -22,7 +22,8 @@ bad_ip_in_log()
 
 bad_ip_in_file()
 {
-    [[ -f $IP_DENY_FILE ]] && grep -v '#' $IP_DENY_FILE
+    [[ -f $IP_DENY_FILE ]] || { echo "$IP_DENY_FILE not found" >&2; exit 1; }
+    grep -v '#' $IP_DENY_FILE
 }
 
 bad_ip()
@@ -61,6 +62,6 @@ elif [[ "$1" == "stop" ]]
 then
     stop
 else
-    echo "block ip listed in txt by iptables" >&2
+    echo "use iptables to block ip in secure/auth log and ips_deny.txt" >&2
     echo "Usage: $0 <start|stop>" >&2
 fi
