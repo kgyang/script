@@ -12,15 +12,22 @@ remove_comment()
     # remove single line C++ comment
     sed '/^[[:space:]]*\/\// d' |\
     # remove single line C comment
-    sed '/^[[:space:]]*\/\*.*\*\/$/ d' |\
+    sed '/^[[:space:]]*\/\*.*\*\/[[:space:]]*$/ d' |\
     # remove inline C/C++ comment
-    sed 's#[[:space:]]*//.*##; s#[[:space:]]*/\*.*\*/##' | \
+    sed 's#[[:space:]]*//.*##; s#[[:space:]]*/\*.*\*/[[:space:]]*##' | \
     # remove multiple line C comments
     awk '
     {
-        if ($0~/\/\*/ && !del) {
-            del = 1
-            sub(/[[:space:]]*\/\*.*/, "")
+        if ($0~/\/\*/) {
+            if (!del) {
+                del = 1
+                sub(/[[:space:]]*\/\*.*/, "")
+                if ($0 != "") print
+            }
+        }
+        else if ($0~/\*\//) {
+            del = 0
+            sub(/.*\*\//, "")
             if ($0 != "") print
         }
         else
@@ -28,11 +35,7 @@ remove_comment()
            if (!del) print
         }
     }
-    /\*\// {
-        del = 0
-        sub(/.*\*\//, "")
-        if ($0 != "") print
-    }'
+    '
 }
 
 remove_comment_in_file()
