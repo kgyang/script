@@ -1,0 +1,44 @@
+https://mirrors.tuna.tsinghua.edu.cn/raspberry-pi-os-images/raspios_arm64/images/raspios_arm64-2023-10-10/
+
+piimager
+
+python3 -m venv ~
+
+https://mirrors.tuna.tsinghua.edu.cn/help/pypi/
+#python -m pip install --upgrade pip
+#pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+#bin/pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple buildhat
+
+=======================================================================
+/etc/apt/sources.list
+https://mirrors.tuna.tsinghua.edu.cn/help/debian/
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware
+
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware
+
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-backports main contrib non-free non-free-firmware
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-backports main contrib non-free non-free-firmware
+
+# deb https://mirrors.tuna.tsinghua.edu.cn/debian-security bookworm-security main contrib non-free non-free-firmware
+# # deb-src https://mirrors.tuna.tsinghua.edu.cn/debian-security bookworm-security main contrib non-free non-free-firmware
+
+deb https://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+# deb-src https://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+
+=======================================================================
+
+.config/pip/pip.conf
+
+[global]
+timeout=100
+index-url=https://pypi.tuna.tsinghua.edu.cn/simple/
+extra-index-url= http://mirrors.aliyun.com/pypi/simple/
+[install]
+trusted-host=
+        pypi.tuna.tsinghua.edu.cn
+        mirrors.aliyun.com
+
+
+
