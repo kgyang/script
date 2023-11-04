@@ -1,5 +1,7 @@
 #!/bin/bash
 
-source bin/activate
+WORKDIR=$PWD
 
-./t.py
+source $HOME/bin/activate
+
+$WORKDIR/t.py
