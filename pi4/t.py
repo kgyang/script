@@ -59,7 +59,7 @@ def left(rt):
     c.stop()
     d.stop()
 
-def round(rt):
+def clockwise(rt):
     a = PassiveMotor('A')
     a.start(-50)
 
@@ -78,11 +78,71 @@ def round(rt):
     c.stop()
     d.stop()
 
+def anticlockwise(rt):
+    a = PassiveMotor('A')
+    a.start(50)
+
+    b = PassiveMotor('B')
+    b.start(50)
+
+    c = PassiveMotor('C')
+    c.start(50)
+
+    d = PassiveMotor('D')
+    d.start(50)
+
+    sleep(rt)
+    a.stop()
+    b.stop()
+    c.stop()
+    d.stop()
+
+def backward(rt):
+    a = PassiveMotor('A')
+    a.start(-50)
+
+    b = PassiveMotor('B')
+    b.start(-50)
+
+#    c = PassiveMotor('C')
+ #   c.start(50)
+
+  #  d = PassiveMotor('D')
+   # d.start(50)
+
+    sleep(rt)
+    a.stop()
+    b.stop()
+#    c.stop()
+ #   d.stop()
+
+def ws(rt):
+#    a = PassiveMotor('A')
+ #   a.start(50)
+
+    b = PassiveMotor('B')
+    b.start(50)
+
+    c = PassiveMotor('C')
+    c.start(-50)
+
+  #  d = PassiveMotor('D')
+   # d.start(50)
+
+    sleep(rt)
+    #a.stop()
+    b.stop()
+    c.stop()
+    #d.stop()
 
 
 
 
 
-#right(5)
-#left(3)
-round(4)
+
+right(1)
+left(1)
+clockwise(1)
+anticlockwise(1)
+backward(1)
+ws(1)
