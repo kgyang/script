@@ -1,0 +1,17 @@
+/etc/apt/source.list:
+deb [ arch=armhf ] https://mirrors.tuna.tsinghua.edu.cn/raspbian/raspbian bookworm main contrib non-free rpi
+
+sudo apt-get install
+
+sudo apt install python3.11-venv
+
+python3 -m venv ~
+
+bin/pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+
+bin/pi3 install buildhat
+
+sudo apt-get install git
+
+//disable console and enable urt
+/usr/bin/raspi-config nonint do_serial 2
