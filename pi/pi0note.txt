@@ -13,5 +13,5 @@ bin/pi3 install buildhat
 
 sudo apt-get install git
 
-//disable console and enable urt
+//disable serial console and enable serial uart
 /usr/bin/raspi-config nonint do_serial 2
