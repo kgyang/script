@@ -42,6 +42,8 @@ trusted-host=
 
 
 touchscreen: touch is not working in bookworm
+https://github.com/raspberrypi/linux/issues/5619
+kernel 6.1.53-v8+ broke official 7'' touchscreen 
 update rp firmware by: sudo rpi-update
 
 on-screen keyboard
