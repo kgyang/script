@@ -41,4 +41,16 @@ trusted-host=
         mirrors.aliyun.com
 
 
+touchscreen: touch is not working in bookworm
+update rp firmware by: sudo rpi-update
+
+on-screen keyboard
+https://forums.raspberrypi.com/viewtopic.php?t=358147
+sudo apt install wvkbd
+- "sudo cp ./toggle-wvkbd.sh /usr/bin/toggle-wvkbd.sh"
+- "sudo cp ./wvkbd.desktop /usr/bin/wvkbd.desktop"
+edit ~/.config/wf-panel-pi.ini:
+- under "launcher_000003=lxterminal.desktop" ADD a NEW line:
+"launcher_000004=/usr/bin/wvkbd.desktop"
+
 
