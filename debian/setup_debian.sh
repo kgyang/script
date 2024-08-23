@@ -1,4 +1,6 @@
 
+sudo apt install gcc gdb vim neovim make cmake gawk git golang rustc neofetch ffmpeg keepass2 vlc
+
 sudo mkdir -p /mnt/win/e /mnt/win/f
 sudo mount -t ntfs-3g /dev/sda5 /mnt/win/e
 sudo mount -t ntfs-3g /dev/sda6 /mnt/win/f
