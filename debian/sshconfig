@@ -1,0 +1,8 @@
+Host pi3
+HostName 192.168.3.101
+User pi
+PubkeyAcceptedKeyTypes +ssh-rsa
+
+Host pi4
+HostName 192.168.3.126
+User yf
