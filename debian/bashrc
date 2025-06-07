@@ -1,2 +1,21 @@
 alias ll='ls -l'
 alias ltr='ls -ltr'
+alias gst='git status'
+alias gl='git pull'
+alias gp='git push'
+alias gpsup='git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)'
+alias glg='git log --stat'
+alias glo='git log --oneline --decorate'
+alias gsh='git show'
+alias gb='git branch'
+alias ga='git add'
+alias gcmsg='git commit -m'
+alias gco='git checkout'
+alias gd='git diff'
+alias vi='vim'
+
+export PS1="\[\e[0;33m\]"'${HOSTNAME}:${PWD}'"\[\e[91m\]\$(git branch 2>/dev/null | sed -n 's/\* \(.*\)/ (\1)/p')\[\e[m\]
+-> "
+
+set -o vi
+export HISTSIZE=10000
