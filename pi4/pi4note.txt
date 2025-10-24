@@ -55,4 +55,9 @@ edit ~/.config/wf-panel-pi.ini:
 - under "launcher_000003=lxterminal.desktop" ADD a NEW line:
 "launcher_000004=/usr/bin/wvkbd.desktop"
 
-
+# add wireless network
+sudo nmcli device wifi rescan wlan0
+sudo nmcli device status
+nmcli device wifi list
+sudo nmcli connection add type wifi con-name YF-OW-CN ifname wlan0 ssid YF-OW-CN
+sudo nmcli connection modify YF-OW-CN wifi-sec.key-mgmt wpa-psk wifi-sec.psk "yk..."
