@@ -1,0 +1,1 @@
+openclaw channels login --channel openclaw-weixin
