@@ -1,0 +1,49 @@
+# 1. 先查看可用的无线网卡设备名
+nmcli device status
+
+# 2. 假设你的无线网卡叫 wlp2s0，创建一个名为 MyWorkWiFi 的新连接
+sudo nmcli connection add type wifi con-name "MyWorkWiFi" ifname wlp2s0 ssid "Your_SSID"
+
+# 3. 设置安全认证方式（WPA/WPA2 Personal）
+sudo nmcli connection modify "MyWorkWiFi" wifi-sec.key-mgmt wpa-psk
+sudo nmcli connection modify "MyWorkWiFi" wifi-sec.psk "your_password"
+
+# 4. （可选）如果需要静态IP，可以这样设置
+sudo nmcli connection modify "MyWorkWiFi" ipv4.method manual \
+ipv4.addresses 192.168.1.100/24 \
+ipv4.gateway 192.168.1.1 \
+ipv4.dns "8.8.8.8 114.114.114.114"
+
+# 5. 激活这个新创建的连接
+sudo nmcli connection up "MyWorkWiFi"
+
+2. 配置文件在哪里？
+当你使用 nmcli 或 NetworkManager 的其他工具创建或修改连接后，相关的配置会被保存到特定的文件中。
+
+主要位置：/etc/NetworkManager/system-connections/
+这是一个目录，里面存放着所有已定义的网络连接配置文件。
+每个连接对应一个 .nmconnection 后缀的文件。
+文件名通常就是你在 con-name 参数中指定的名字（例如上面例子中的 MyWorkWiFi.nmconnection）。
+文件格式示例 (/etc/NetworkManager/system-connections/MyWorkWiFi.nmconnection)：
+[connection]
+id=MyWorkWiFi
+uuid=<自动生成的UUID>
+type=wifi
+interface-name=wlp2s0
+permissions=
+[wifi]
+mode=infrastructure
+ssid=Your_SSID
+[wifi-security]
+key-mgmt=wpa-psk
+psk=your_password
+[ipv4]
+method=auto
+[ipv6]
+method=auto
+
+重要提示：
+这些配置文件包含敏感信息（如 Wi-Fi 密码），默认只有 root 用户可以读取。
+不建议直接编辑这些文件，除非你非常清楚自己在做什么。最好始终使用 nmcli 命令行工具来进行管理，因为它能保证配置的正确性和一致性。
+如果你想备份或迁移某个网络配置，可以直接复制这个 .nmconnection 文件到另一台机器的相同路径下。
+希望以上信息对你有帮助！
