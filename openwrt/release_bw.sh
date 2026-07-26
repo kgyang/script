@@ -1,5 +1,5 @@
 #!/bin/sh
  
-iptables -t mangle -F
-iptables -t mangle -X
-tc qdisc del dev br-lan root
+/usr/sbin/iptables -t mangle -F
+/usr/sbin/iptables -t mangle -X
+/sbin/tc qdisc del dev br-lan root
