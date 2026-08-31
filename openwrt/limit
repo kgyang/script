@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+
+start() {
+	logger -t limit "run limit_bw.sh"
+	/root/limit_bw.sh
+}
+
+stop() {
+	logger -t limit "run release_bw.sh"
+	/root/release_bw.sh
+}

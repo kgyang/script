@@ -1,2 +1,2 @@
-12 * * * /root/limit_bw.sh
-17 * * * /root/release_bw.sh
+30 12 * * * /root/release_bw.sh
+30 15 * * * /root/limit_bw.sh
