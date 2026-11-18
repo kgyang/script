@@ -135,6 +135,27 @@ Usage: rlogger_ssh [-t &lt;HOURS&gt;] -n &lt;IP&gt;<br>
 This script is used to read log from remote machine without time limitation<br>
 Usage: rlogger_ssh_simple &lt;IP&gt;<br>
 
+<h2>mac/ollama-serve.sh</h2>
+按需启停本机 Ollama 服务（Apple Silicon 上走 MLX 后端），启动时自动带上合适的显存/网络参数。<br>
+Usage: ollama-serve.sh [start|stop|restart|status|log]<br>
+<br>
+start    start the service; if already running, just report status (default)<br>
+stop     stop the service<br>
+restart  restart the service<br>
+status   show version, pid, endpoints and loaded models<br>
+log      tail -f the log (~/Library/Logs/ollama-serve.log)<br>
+<br>
+Parameters set on startup (all overridable by env var of the same name):<br>
+OLLAMA_MAX_TRANSFER_STREAMS=32  pull concurrency; default 4 gives only ~300KB/s on throttled links<br>
+OLLAMA_MAX_LOADED_MODELS=1      on 32GB, 27B(19GB)+9B(8GB) overflows the 25GB GPU budget<br>
+OLLAMA_FLASH_ATTENTION=1        Metal flash attention<br>
+OLLAMA_KV_CACHE_TYPE=q8_0       8bit KV cache, halves long-context memory<br>
+OLLAMA_KEEP_ALIVE=10m           unload the model after 10m idle<br>
+<br>
+Example:<br>
+ollama-serve.sh                      start<br>
+OLLAMA_KEEP_ALIVE=1h ollama-serve.sh  start with overridden keep-alive<br>
+
 <h2>network/atelnet</h2>
 automatic telnet by using KSH's two-way FIFO<br>
 Usage: atelnet &lt;MACHINE&gt;<br>

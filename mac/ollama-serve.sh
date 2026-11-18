@@ -104,8 +104,32 @@ case "${1:-start}" in
     [ -f "$LOG" ] || { echo "还没有日志: $LOG"; exit 1; }
     tail -n 50 -f "$LOG"
     ;;
+  -h|--help)
+    cat <<'EOF'
+按需启停本机 Ollama 服务（Apple Silicon 上走 MLX 后端），启动时自动带上合适的显存/网络参数。
+Usage: ollama-serve.sh [start|stop|restart|status|log]
+
+start    start the service; if already running, just report status (default)
+stop     stop the service
+restart  restart the service
+status   show version, pid, endpoints and loaded models
+log      tail -f the log (~/Library/Logs/ollama-serve.log)
+
+Parameters set on startup (all overridable by env var of the same name):
+OLLAMA_MAX_TRANSFER_STREAMS=32  pull concurrency; default 4 gives only ~300KB/s on throttled links
+OLLAMA_MAX_LOADED_MODELS=1      on 32GB, 27B(19GB)+9B(8GB) overflows the 25GB GPU budget
+OLLAMA_FLASH_ATTENTION=1        Metal flash attention
+OLLAMA_KV_CACHE_TYPE=q8_0       8bit KV cache, halves long-context memory
+OLLAMA_KEEP_ALIVE=10m           unload the model after 10m idle
+
+Example:
+ollama-serve.sh                      start
+OLLAMA_KEEP_ALIVE=1h ollama-serve.sh  start with overridden keep-alive
+EOF
+    exit 0
+    ;;
   *)
-    echo "用法: $(basename "$0") [start|stop|restart|status|log]" >&2
+    echo "Usage: $(basename "$0") [start|stop|restart|status|log]" >&2
     exit 2
     ;;
 esac
