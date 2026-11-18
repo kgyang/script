@@ -2,3 +2,6 @@ alias ll='ls -l'
 alias ltr='ls -ltr'
 
 export PATH="/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH"
+
+# Ollama CLI (bundle 内自带命令行)
+export PATH="/Applications/Ollama.app/Contents/Resources:$PATH"
