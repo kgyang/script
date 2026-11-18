@@ -137,13 +137,15 @@ Usage: rlogger_ssh_simple &lt;IP&gt;<br>
 
 <h2>mac/ollama-serve.sh</h2>
 按需启停本机 Ollama 服务（Apple Silicon 上走 MLX 后端），启动时自动带上合适的显存/网络参数。<br>
-Usage: ollama-serve.sh [start|stop|restart|status|log]<br>
+Usage: ollama-serve.sh [start|stop|restart|status|log|install|uninstall]<br>
 <br>
-start    start the service; if already running, just report status (default)<br>
-stop     stop the service<br>
-restart  restart the service<br>
-status   show version, pid, endpoints and loaded models<br>
-log      tail -f the log (~/Library/Logs/ollama-serve.log)<br>
+start     start the service; if already running, just report status (default)<br>
+stop      stop the service<br>
+restart   restart the service<br>
+status    show version, pid, endpoints and loaded models<br>
+log       tail -f the log (~/Library/Logs/ollama-serve.log)<br>
+install   install a launchd LaunchAgent so the service starts at login<br>
+uninstall remove the LaunchAgent (stops the service)<br>
 <br>
 Parameters set on startup (all overridable by env var of the same name):<br>
 OLLAMA_MAX_TRANSFER_STREAMS=32  pull concurrency; default 4 gives only ~300KB/s on throttled links<br>
@@ -155,6 +157,9 @@ OLLAMA_KEEP_ALIVE=10m           unload the model after 10m idle<br>
 Example:<br>
 ollama-serve.sh                      start<br>
 OLLAMA_KEEP_ALIVE=1h ollama-serve.sh  start with overridden keep-alive<br>
+<br>
+自启用登录级 LaunchAgent（~/Library/LaunchAgents/local.ollama-serve.plist），<br>
+不是系统级 LaunchDaemon；装好后 start/stop/restart 自动走 launchctl。<br>
 
 <h2>network/atelnet</h2>
 automatic telnet by using KSH's two-way FIFO<br>

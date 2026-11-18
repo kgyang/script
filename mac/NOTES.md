@@ -8,6 +8,11 @@
 装的是 `/Applications/Ollama.app`（v0.40.16），CLI 在 bundle 内：
 `/Applications/Ollama.app/Contents/Resources/ollama`（PATH 已在 `mac/zshrc` 中配置）。
 启停用 `mac/ollama-serve.sh`，日志在 `~/Library/Logs/ollama-serve.log`。
+登录自启用 `mac/ollama-serve.sh install` 装（LaunchAgent `local.ollama-serve`，
+plist 在 `~/Library/LaunchAgents/`）。macOS 没有 systemd：登录自启是 LaunchAgent，
+系统级（开机、未登录也跑）才是 LaunchDaemon，这里只要前者。`KeepAlive` 故意为
+false——否则 `ollama-serve.sh stop` 刚杀掉就被 launchd 拉起来；代价是不做崩溃重启。
+装好后 start/stop/restart 自动走 `launchctl`。脚本挪位置后要重跑一次 install。
 
 Apple Silicon 上 Ollama 自动选 **MLX 后端**（不是 llama.cpp），Metal 可用显存 25GB。
 
